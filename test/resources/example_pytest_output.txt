@@ -1,0 +1,21 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.2, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
+rootdir: C:\Users\harvey\github\pytuist
+plugins: cov-3.0.0
+collected 7 items
+
+<Module test/test_root.py>
+  <Function test_in_root>
+<Module test/test_root_again.py>
+  <Function test_another_in_root>
+<Module test/child/test_child.py>
+  <Function test_child>
+  <Function test_another_in_child>
+<Module test/child/grandchild/test_another_grandchild.py>
+  <Function test_another_grandchild>
+<Module test/child/grandchild/test_grandchild.py>
+  <Function test_grandchild>
+<Module test/unit/actual_test.py>
+  <Function test_construct_test_hierarchy>
+
+========================= 6 tests collected in 0.01s ==========================
