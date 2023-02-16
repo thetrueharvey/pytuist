@@ -10,16 +10,90 @@ from pathlib import Path
 import re
 
 # external
+from rich.tree import Tree
 
 # internal
 
 # %% Types
 from typing import (
     Optional,
+    Protocol,
 )
 
 
 # %% Folder Hierarchy
+class Nav:
+    """
+    A class that defines navigation controls for a node in the test hierarchy.
+    """
+    owner: TestDir | Test
+
+    def __init__(self, owner: TestDir | Test) -> None:
+        self.owner = owner
+
+    # Navigation-controls  # TODO: Account for being expanded or not
+    def up(self) -> TestDir | Test:
+        """
+        Move to the previous child of the current node's parent (i.e. the neighbour above).
+        """
+        if self.owner.parent:
+            index = self.owner.parent.children.index(self.owner)
+            if index > 0:
+                selected = self.owner.parent.children[index - 1]
+                
+                self.owner.renderer.unselect()
+                selected.renderer.select()
+
+                return selected
+
+        return self.owner
+
+    def down(self) -> TestDir | Test:
+        """
+        Move to the next child of the current node's parent (i.e. the neighbour below).
+        """
+        if self.owner.parent:
+            index = self.owner.parent.children.index(self.owner)
+            if index < len(self.owner.parent.children) - 1:
+                selected = self.owner.parent.children[index + 1]
+                
+                self.owner.renderer.unselect()
+                selected.renderer.select()
+
+                return selected
+
+        return self.owner
+
+    def left(self) -> TestDir | Test:
+        """
+        Move into the parent
+        """
+        if self.owner.parent:
+            self.owner.renderer.unselect()
+            self.owner.parent.renderer.select()
+            return self.owner.parent
+
+        return self.owner
+
+    def right(self) -> TestDir | Test:
+        """
+        Move into the first child
+        """
+        if isinstance(self.owner, TestDir) and len(self.owner.children) > 0:
+            self.owner.renderer.unselect()
+            self.owner.children[0].renderer.select()
+            return self.owner.children[0]
+
+        return self.owner
+
+    def enter(self) -> TestDir | Test:
+        """
+        Expand or collapse the current node.
+        """
+        self.owner.renderer.toggle_expand()
+        return self.owner
+
+
 class TestDir:
     """
     A TestDir represents a directory that contains tests, or has children that contain tests.
@@ -29,6 +103,9 @@ class TestDir:
     name: str
     parent: Optional[TestDir] = None
     children: list[TestDir | Test]
+
+    renderer: RenderConfig
+    nav: Nav
 
     def __init__(self, name: str, parent: Optional[TestDir] = None) -> None:
         self.name = name
@@ -41,6 +118,9 @@ class TestDir:
         self._dir_registry[self.fully_qualified_path_str] = self
         if self.parent:
             self.parent.children.append(self)
+
+        self.renderer = RenderConfig(self.name)
+        self.nav = Nav(self)
 
     def with_child(self, name: str) -> TestDir:
         """
@@ -94,27 +174,32 @@ class TestDir:
                 match = function_pattern.search(line)
                 if match and current_module is not None:
                     module_info[current_module].append(match.group(1))
-  
+
+        root: TestDir = TestDir(".")
         for module, functions in module_info.items():
-            root = module.split("/")[0]
-            if root not in cls._dir_registry:
-                dir = TestDir(root)
-            else:
-                dir = cls._dir_registry[root]
+            dir = cls._dir_registry[root.name]
                 
-            for part in module.split("/")[1:]:
+            for part in module.split("/"):
                 dir = dir.with_child(part)
 
             for function in functions:
                 dir.with_test(function)
-        
-        return cls._dir_registry[root]  # TODO: Handle this case
+
+        if len(root.children) == 1 and isinstance(root.children[0], TestDir):
+            root.children[0].parent = None
+            root.children[0].renderer.select()
+            return root.children[0]
+
+        root.renderer.select()
+
+        return root
 
     def __repr__(self) -> str:
         if self.parent:
             self_repr = "|" + ("-" * 4) * self.depth + f"[{self.name}]\n"
         else:
             self_repr = f"[{self.name}]\n"
+
         return self_repr + "\n".join([repr(child) for child in self.children])
 
     def __str__(self) -> str:
@@ -127,16 +212,64 @@ class Test:
     """
     name: str
     parent: TestDir
+
+    renderer: RenderConfig
     
     def __init__(self, name: str, parent: TestDir) -> None:
         self.name = name
         self.parent = parent
+
+        self.__post_init__()
+
+    def __post_init__(self):
+        self.renderer = RenderConfig(self.name)
+        self.nav = Nav(self)
 
     def __repr__(self) -> str:
         return "|" + ("-" * 4) * (self.parent.depth + 1) + f"> {self.name}"
 
     def __str__(self) -> str:
         return self.__repr__()
+
+
+# %% Render Configuration
+class RenderConfig:
+    """
+    Configuration for rendering a TestDir hierarchy.
+    """
+    name: str
+    expanded: bool = True
+    selected: bool = False
+
+    def __init__(self, name: str):
+        self.name = name
+
+    def get_render(self) -> str:
+        """
+        Describes to rich how to render this object.
+        """
+        if self.selected:
+            return f"[bold blue]{self.name}"
+        
+        return self.name
+
+    def select(self) -> None:
+        """
+        Select this object.
+        """
+        self.selected = True
+
+    def unselect(self) -> None:
+        """
+        Unselect this object.
+        """
+        self.selected = False
+
+    def toggle_expand(self) -> None:
+        """
+        Expand or collapse this object.
+        """
+        self.expanded = not self.expanded
 
 
 # %% Functions

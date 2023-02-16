@@ -1,0 +1,2 @@
+- [X] Why is "test" not at the root?
+- [ ] Why does the root not highlight?
