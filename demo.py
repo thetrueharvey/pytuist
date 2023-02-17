@@ -4,7 +4,11 @@ Automated demo that tests the low-level navigation and rendering functionality
 import sys
 from pathlib import Path
 
-from pytuist.pytuist import TestDir
+from pytuist.pytuist import (
+    TestDir,
+    Test,
+    get_tests,
+)
 from pytuist.render import render_test_tree
 
 from rich.live import Live
@@ -14,11 +18,12 @@ import msvcrt
 
 console = Console()
 
+ 
 if __name__ == "__main__":
-    input = (Path("test") / "resources" / "example_pytest_output").with_suffix(".txt").read_text()
+    input = get_tests()
 
-    root = TestDir.from_pytest_output(input)
-    selected = root
+    root: TestDir = TestDir.from_pytest_output(input)
+    selected: TestDir | Test = root
 
     console.clear()
     
@@ -30,26 +35,31 @@ if __name__ == "__main__":
         while True:
             key = msvcrt.getch()
 
-            if key in (b"q", b"\x03"):
-                live.update("")
-                sys.exit(0)
+            match key:
+                case b"q" | b"\x03":
+                    live.update("")
+                    sys.exit(0)
 
-            if key == b"\r":
-                selected.renderer.toggle_expand()
+                case b"\r":
+                    selected.nav.enter()
 
-            if key == b"\xe0":
-                key = msvcrt.getch()
+                case b" ":
+                    selected.nav.space()
 
-                if key == b"H":
-                    selected = selected.nav.up()
-
-                if key == b"P":
-                    selected = selected.nav.down()
-
-                if key == b"M":
-                    selected = selected.nav.right()
-
-                if key == b"K":
-                    selected = selected.nav.left()
+                case b"\xe0":
+                    key = msvcrt.getch()
+                    match key:
+                        case b"H":
+                            selected = selected.nav.up()
+                        case b"P":
+                            selected = selected.nav.down()
+                        case b"M":
+                            selected = selected.nav.right()
+                        case b"K":
+                            selected = selected.nav.left()
+                        case _:
+                            pass
+                case _:
+                    print(key)
 
             live.update(render_test_tree(root))

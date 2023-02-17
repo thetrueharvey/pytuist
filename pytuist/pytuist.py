@@ -8,18 +8,29 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 import re
+from enum import Enum
 
 # external
-from rich.tree import Tree
 
 # internal
 
 # %% Types
 from typing import (
     Optional,
-    Protocol,
 )
 
+
+class TestStatus(Enum):
+    Passed = "✓"
+    Failed = "✗"
+    NotRun = "-"
+
+    def render(self):
+        match self:
+            case TestStatus.Passed: return "[green][✓][/green]"
+            case TestStatus.Failed: return "[red][✗][/red]"
+            case TestStatus.NotRun: return "[grey][-][/grey]"
+     
 
 # %% Folder Hierarchy
 class Nav:
@@ -93,6 +104,20 @@ class Nav:
         self.owner.renderer.toggle_expand()
         return self.owner
 
+    def space(self) -> TestDir | Test:
+        """
+        Run the current test.
+        """
+        result = subprocess.run(["pytest", self.owner.test_arg], stdout=subprocess.DEVNULL)
+        if result.returncode == 0:
+            self.owner.renderer.status = TestStatus.Passed
+
+        if result.returncode == 1:
+            self.owner.renderer.status = TestStatus.Failed
+            
+        return self.owner
+        
+
 
 class TestDir:
     """
@@ -119,8 +144,10 @@ class TestDir:
         if self.parent:
             self.parent.children.append(self)
 
-        self.renderer = RenderConfig(self.name)
+        self.renderer = RenderConfig(self.name, owner=self)
         self.nav = Nav(self)
+
+        RenderConfig.update_checkbox_position(self.depth * 4 + len(self.name))
 
     def with_child(self, name: str) -> TestDir:
         """
@@ -148,6 +175,13 @@ class TestDir:
         return self.parent.fully_qualified_path_str + "/" + self.name if self.parent else self.name
 
     @property
+    def test_arg(self) -> str:
+        """
+        The argument to pass to pytest to run only the tests in this directory.
+        """
+        return self.fully_qualified_path_str
+
+    @property
     def fully_qualified_path_list(self) -> list[str]:
         return self.parent.fully_qualified_path_list + [self.name] if self.parent else [self.name]
 
@@ -168,12 +202,12 @@ class TestDir:
         for line in pytest_output.splitlines():
             match = module_pattern.search(line)
             if match:
-                current_module = match.group(1)
+                current_module = str(match.group(1))
                 module_info[current_module] = []
             else:
                 match = function_pattern.search(line)
                 if match and current_module is not None:
-                    module_info[current_module].append(match.group(1))
+                    module_info[current_module].append(str(match.group(1)))
 
         root: TestDir = TestDir(".")
         for module, functions in module_info.items():
@@ -222,8 +256,25 @@ class Test:
         self.__post_init__()
 
     def __post_init__(self):
-        self.renderer = RenderConfig(self.name)
+        self.renderer = RenderConfig(self.name, owner=self)
         self.nav = Nav(self)
+
+        RenderConfig.update_checkbox_position(self.depth * 4 + len(self.name))
+
+    @property
+    def test_arg(self) -> str:
+        """
+        The argument to pass to pytest to run this exact test
+        """
+        return f"{self.parent.fully_qualified_path_str}::{self.name}"
+
+    @property
+    def fully_qualified_path_str(self) -> str:
+        return self.parent.fully_qualified_path_str + "/" + self.name
+
+    @property
+    def depth(self) -> int:
+        return self.parent.depth + 1
 
     def __repr__(self) -> str:
         return "|" + ("-" * 4) * (self.parent.depth + 1) + f"> {self.name}"
@@ -240,18 +291,33 @@ class RenderConfig:
     name: str
     expanded: bool = True
     selected: bool = False
+    status: TestStatus = TestStatus.NotRun
+    owner: TestDir | Test
 
-    def __init__(self, name: str):
+    _checkbox_position: int = 0
+
+    def __init__(self, name: str, owner: TestDir | Test):
         self.name = name
+        self.owner = owner
+
+    @classmethod
+    def update_checkbox_position(cls, new_position: int) -> None:
+        """
+        Update the position of the checkbox, if the provided position is greater than the current position.
+        """
+        if new_position > cls._checkbox_position:
+            cls._checkbox_position = new_position
 
     def get_render(self) -> str:
         """
         Describes to rich how to render this object.
         """
+        checkbox_spacing = self._checkbox_position - (self.owner.depth * 4 + len(self.name.replace(".py", "")))
+        name = self.name.replace(".py", "")
         if self.selected:
-            return f"[bold blue]{self.name}"
+            name = f"[bold blue]{name}[/]"
         
-        return self.name
+        return f"{name}{' ' * checkbox_spacing} {self.status.render()}"
 
     def select(self) -> None:
         """

@@ -13,9 +13,11 @@ collected 7 items
   <Function test_another_in_child>
 <Module test/child/grandchild/test_another_grandchild.py>
   <Function test_another_grandchild>
+  <Function test_that_fails>
 <Module test/child/grandchild/test_grandchild.py>
   <Function test_grandchild>
 <Module test/unit/actual_test.py>
   <Function test_construct_test_hierarchy>
+  <Function test_render>
 
 ========================= 6 tests collected in 0.01s ==========================

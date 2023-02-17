@@ -7,12 +7,10 @@ The rendering engine for pytuist.
 # external
 from rich.tree import Tree
 from rich.panel import Panel
+from rich.layout import Layout
 
 # internal
-from pytuist.pytuist import (
-    TestDir,
-    Test
-)
+from pytuist.pytuist import TestDir
 
 
 # %% Types
@@ -26,7 +24,7 @@ def render_test_tree(test_hierarchy: TestDir):
     """
     Renders the test hierarchy
     """
-    root = Tree(test_hierarchy.name)
+    root = Tree(test_hierarchy.renderer.get_render())
 
     def _recursive_render(node: TestDir, parent: Tree):
         if node.renderer.expanded:
@@ -39,13 +37,14 @@ def render_test_tree(test_hierarchy: TestDir):
 
     _recursive_render(test_hierarchy, root)
 
-    render = Panel(
+    hierarchy_render = Panel(
         root,
         title="pytuist",
         subtitle="arrows: navigate | enter: expand/collapse | space: run | q: quit",
         border_style="blue",
         subtitle_align="right",
-        highlight=True
+        highlight=True,
+        width=max(test_hierarchy.renderer._checkbox_position + 8, 80)
     )
 
-    return render
+    return hierarchy_render
