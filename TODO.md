@@ -3,3 +3,5 @@
 - [ ] When running a folder, determine what passed and failed
 - [ ] Enable showing errors
 - [ ] align status to the right
+- [ ] scrollable
+- [ ] refresh

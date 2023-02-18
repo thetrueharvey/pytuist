@@ -17,6 +17,7 @@ from enum import Enum
 # %% Types
 from typing import (
     Optional,
+    Union,
 )
 
 
@@ -56,6 +57,10 @@ class Nav:
                 selected.renderer.select()
 
                 return selected
+            else:
+                self.owner.renderer.unselect()
+                self.owner.parent.renderer.select()
+                return self.owner.parent
 
         return self.owner
 
@@ -90,7 +95,11 @@ class Nav:
         """
         Move into the first child
         """
-        if isinstance(self.owner, TestDir) and len(self.owner.children) > 0:
+        if (
+            isinstance(self.owner, TestDir) and
+            len(self.owner.children) > 0 and
+            self.owner.renderer.expanded
+        ):
             self.owner.renderer.unselect()
             self.owner.children[0].renderer.select()
             return self.owner.children[0]
@@ -104,18 +113,20 @@ class Nav:
         self.owner.renderer.toggle_expand()
         return self.owner
 
-    def space(self) -> TestDir | Test:
+    def space(self) -> tuple[TestDir | Test, str]:
         """
         Run the current test.
         """
-        result = subprocess.run(["pytest", self.owner.test_arg], stdout=subprocess.DEVNULL)
+        env = {"COLUMNS": "140"}
+        
+        result = subprocess.run(["pytest", self.owner.test_arg], capture_output=True, env=env)
         if result.returncode == 0:
             self.owner.renderer.status = TestStatus.Passed
 
         if result.returncode == 1:
             self.owner.renderer.status = TestStatus.Failed
             
-        return self.owner
+        return self.owner, result.stdout.decode("utf-8")
         
 
 
@@ -146,8 +157,6 @@ class TestDir:
 
         self.renderer = RenderConfig(self.name, owner=self)
         self.nav = Nav(self)
-
-        RenderConfig.update_checkbox_position(self.depth * 4 + len(self.name))
 
     def with_child(self, name: str) -> TestDir:
         """
@@ -259,8 +268,6 @@ class Test:
         self.renderer = RenderConfig(self.name, owner=self)
         self.nav = Nav(self)
 
-        RenderConfig.update_checkbox_position(self.depth * 4 + len(self.name))
-
     @property
     def test_arg(self) -> str:
         """
@@ -294,26 +301,28 @@ class RenderConfig:
     status: TestStatus = TestStatus.NotRun
     owner: TestDir | Test
 
-    _checkbox_position: int = 0
-
     def __init__(self, name: str, owner: TestDir | Test):
         self.name = name
         self.owner = owner
 
-    @classmethod
-    def update_checkbox_position(cls, new_position: int) -> None:
+    def get_checkbox_position(self) -> int:
         """
-        Update the position of the checkbox, if the provided position is greater than the current position.
+        Recursively get the position of the checkbox for this object, based on the position of all children
+        checkboxes of the parent, where a child isn't hidden.
         """
-        if new_position > cls._checkbox_position:
-            cls._checkbox_position = new_position
+        self_position = self.owner.depth * 4 + len(self.name.replace(".py", ""))
+        if not self.expanded or isinstance(self.owner, Test):
+            return self_position
 
-    def get_render(self) -> str:
+        return max(*[child.renderer.get_checkbox_position() for child in self.owner.children], self_position)
+
+    def get_render(self, checkbox_position: int) -> str:
         """
         Describes to rich how to render this object.
         """
-        checkbox_spacing = self._checkbox_position - (self.owner.depth * 4 + len(self.name.replace(".py", "")))
         name = self.name.replace(".py", "")
+        checkbox_spacing = checkbox_position - (self.owner.depth * 4 + len(name))
+        
         if self.selected:
             name = f"[bold blue]{name}[/]"
         

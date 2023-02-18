@@ -26,3 +26,6 @@ ipykernel = "^6.5"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+pytuist = "main:main"
