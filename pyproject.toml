@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytuist"
-version = "0.0.1a1"
+version = "0.0.1a3"
 description = "A TUI (terminal user interface) for pytest, because testing should be fun."
 authors = ["Nic Harvey <nicharvey@protonmail.com>"]
 readme = "README.md"
