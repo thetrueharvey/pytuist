@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def test_construct_test_hierarchy():
-    from pytuist.pytuist import TestDir
+    from src.pytuist import TestDir
     
     input = (Path("test") / "resources" / "example_pytest_output").with_suffix(".txt").read_text()
 
@@ -19,8 +19,8 @@ def test_construct_test_hierarchy():
 
 
 def test_render():
-    from pytuist.pytuist import TestDir
-    from pytuist.render import render_test_tree
+    from src.pytuist import TestDir
+    from src.render import render_test_tree
     
     input = (Path("test") / "resources" / "example_pytest_output").with_suffix(".txt").read_text()
 

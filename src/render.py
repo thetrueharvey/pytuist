@@ -11,7 +11,7 @@ from rich.console import Group
 from rich.columns import Columns
 
 # internal
-from pytuist.pytuist import TestDir
+from src.pytuist import TestDir
 
 
 # %% Types
@@ -30,7 +30,7 @@ def render_test_tree(
     Renders the test hierarchy
     """
     checkbox_position = test_hierarchy.renderer.get_checkbox_position()
-    
+
     root = Tree(test_hierarchy.renderer.get_render(checkbox_position))
 
     def _recursive_render(node: TestDir, parent: Tree):
@@ -45,7 +45,10 @@ def render_test_tree(
     _recursive_render(test_hierarchy, root)
 
     header = Panel(
-        "[bold green]arrows[/bold green]: navigate | [bold green]enter[/bold green]: expand/collapse | [bold green]space[/bold green]: run | [bold green]q[/bold green]: quit",
+        "[bold green]arrows[/bold green]: navigate | "
+        "[bold green]enter[/bold green]: expand/collapse | "
+        "[bold green]space[/bold green]: run | "
+        "[bold green]q[/bold green]: quit",
         title="pytuist",
         width=144 + checkbox_position + 8,
     )

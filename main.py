@@ -3,12 +3,12 @@ The main entrypoint for pytuist
 """
 import sys
 
-from pytuist.pytuist import (
+from src.pytuist import (
     TestDir,
     Test,
     get_tests,
 )
-from pytuist.render import render_test_tree
+from src.render import render_test_tree
 
 from rich.live import Live
 from rich.console import Console
@@ -17,7 +17,7 @@ import msvcrt
 
 console = Console()
 
-def main():
+def main() -> None:
     input = get_tests()
 
     root: TestDir = TestDir.from_pytest_output(input)

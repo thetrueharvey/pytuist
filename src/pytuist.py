@@ -15,10 +15,7 @@ from enum import Enum
 # internal
 
 # %% Types
-from typing import (
-    Optional,
-    Union,
-)
+from typing import Optional
 
 
 class TestStatus(Enum):
@@ -31,7 +28,7 @@ class TestStatus(Enum):
             case TestStatus.Passed: return "[green][✓][/green]"
             case TestStatus.Failed: return "[red][✗][/red]"
             case TestStatus.NotRun: return "[grey][-][/grey]"
-     
+
 
 # %% Folder Hierarchy
 class Nav:
@@ -52,7 +49,7 @@ class Nav:
             index = self.owner.parent.children.index(self.owner)
             if index > 0:
                 selected = self.owner.parent.children[index - 1]
-                
+
                 self.owner.renderer.unselect()
                 selected.renderer.select()
 
@@ -72,7 +69,7 @@ class Nav:
             index = self.owner.parent.children.index(self.owner)
             if index < len(self.owner.parent.children) - 1:
                 selected = self.owner.parent.children[index + 1]
-                
+
                 self.owner.renderer.unselect()
                 selected.renderer.select()
 
@@ -118,16 +115,15 @@ class Nav:
         Run the current test.
         """
         env = {"COLUMNS": "140"}
-        
+
         result = subprocess.run(["pytest", self.owner.test_arg], capture_output=True, env=env)
         if result.returncode == 0:
             self.owner.renderer.status = TestStatus.Passed
 
         if result.returncode == 1:
             self.owner.renderer.status = TestStatus.Failed
-            
+
         return self.owner, result.stdout.decode("utf-8")
-        
 
 
 class TestDir:
@@ -221,7 +217,7 @@ class TestDir:
         root: TestDir = TestDir(".")
         for module, functions in module_info.items():
             dir = cls._dir_registry[root.name]
-                
+
             for part in module.split("/"):
                 dir = dir.with_child(part)
 
@@ -257,7 +253,7 @@ class Test:
     parent: TestDir
 
     renderer: RenderConfig
-    
+
     def __init__(self, name: str, parent: TestDir) -> None:
         self.name = name
         self.parent = parent
@@ -322,10 +318,10 @@ class RenderConfig:
         """
         name = self.name.replace(".py", "")
         checkbox_spacing = checkbox_position - (self.owner.depth * 4 + len(name))
-        
+
         if self.selected:
             name = f"[bold blue]{name}[/]"
-        
+
         return f"{name}{' ' * checkbox_spacing} {self.status.render()}"
 
     def select(self) -> None:
@@ -359,4 +355,3 @@ def get_tests(root_dir: Path = Path.cwd()):
     )
 
     return pytest_output.stdout.decode("utf-8")
-
