@@ -10,8 +10,7 @@ on:
     branches: [ "dev" ]
 
 jobs:
-  build:
-
+  qa:
     runs-on: windows-latest
     strategy:
       fail-fast: false
