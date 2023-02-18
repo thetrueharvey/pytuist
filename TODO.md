@@ -1,0 +1,7 @@
+- [X] Why is "test" not at the root?
+- [X] Why does the root not highlight?
+- [ ] When running a folder, determine what passed and failed
+- [ ] Enable showing errors
+- [ ] align status to the right
+- [ ] scrollable
+- [ ] refresh
