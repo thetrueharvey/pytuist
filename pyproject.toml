@@ -16,6 +16,7 @@ mypy = "^1.0"
 pytest = "^6.2"
 pytest-cov = "^3.0"
 flake8 = "^6.0.0"
+ipykernel = "^6.21.2"
 
 [tool.poetry.group.examples.dependencies]
 

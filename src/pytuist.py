@@ -178,9 +178,17 @@ class TestDir :
             self.set_passed()
 
         if result.returncode == 1:
+            self.set_passed()
             self.set_failed()
 
-            # parse the result... somehow
+            # parse the result
+            tests = self.tests
+            failures: list[str] = re.findall(r"FAILED\s+(.*) - ", result.stdout.decode("utf-8"))
+
+            for test in tests:
+                if test.test_arg in failures:
+                    test.set_failed()
+
         return result
 
     def set_passed(self):
@@ -192,6 +200,20 @@ class TestDir :
         self.renderer.status = TestStatus.Failed
         if self.parent:
             self.parent.set_failed()
+
+    @property
+    def tests(self) -> list[Test]:
+        """
+        Recursively find all Tests that are children of this TestDir.
+        """
+        tests: list[Test] = []
+        for child in self.children:
+            if isinstance(child, Test):
+                tests.append(child)
+            else:
+                tests.extend(child.tests)
+
+        return tests
 
     @property
     def fully_qualified_path_str(self) -> str:

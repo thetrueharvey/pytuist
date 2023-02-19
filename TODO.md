@@ -7,3 +7,4 @@
 - [ ] refresh
 - [ ] Tab to switch to output screen and navigate specific errors
 - [ ] responsive layout - determine minimum size for pytest output
+- [ ] partial success indicator for dirs with some successes
