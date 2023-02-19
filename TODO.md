@@ -1,6 +1,6 @@
 - [X] Why is "test" not at the root?
 - [X] Why does the root not highlight?
-- [ ] When running a folder, determine what passed and failed
+- [X] When running a folder, determine what passed and failed
 - [X] Enable showing errors
 - [X] align status to the right
 - [ ] scrollable
