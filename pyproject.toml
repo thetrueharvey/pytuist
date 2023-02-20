@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pytuist"
-version = "0.0.1a3"
+version = "0.0.1"
 description = "A TUI (terminal user interface) for pytest, because testing should be fun."
 authors = ["Nic Harvey <nicharvey@protonmail.com>"]
 readme = "README.md"
@@ -16,6 +16,7 @@ mypy = "^1.0"
 pytest = "^6.2"
 pytest-cov = "^3.0"
 flake8 = "^6.0.0"
+ipykernel = "^6.21.2"
 
 [tool.poetry.group.examples.dependencies]
 

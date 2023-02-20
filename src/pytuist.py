@@ -40,7 +40,7 @@ class Nav:
     def __init__(self, owner: TestDir | Test) -> None:
         self.owner = owner
 
-    # Navigation-controls  # TODO: Account for being expanded or not
+    # Navigation-controls  #TODO:  Account for being expanded or not
     def up(self) -> TestDir | Test:
         """
         Move to the previous child of the current node's parent (i.e. the neighbour above).
@@ -114,14 +114,7 @@ class Nav:
         """
         Run the current test.
         """
-        env = {"COLUMNS": "140"}
-
-        result = subprocess.run(["pytest", self.owner.test_arg], capture_output=True, env=env)
-        if result.returncode == 0:
-            self.owner.renderer.status = TestStatus.Passed
-
-        if result.returncode == 1:
-            self.owner.renderer.status = TestStatus.Failed
+        result = self.owner.run()
 
         return self.owner, result.stdout.decode("utf-8")
 
@@ -171,6 +164,56 @@ class TestDir:
         child = Test(name, self)
         self.children.append(child)
         return child
+
+    def run(self):
+        env = {"COLUMNS": "140"}
+
+        result = subprocess.run(
+            args=["pytest", self.test_arg],
+            capture_output=True,
+            env=env
+        )
+
+        if result.returncode == 0:
+            self.set_passed()
+
+        if result.returncode == 1:
+            self.set_passed()
+            self.set_failed()
+
+            # parse the result
+            tests = self.tests
+            failures: list[str] = re.findall(r"FAILED\s+(.*) - ", result.stdout.decode("utf-8"))
+
+            for test in tests:
+                if test.test_arg in failures:
+                    test.set_failed()
+
+        return result
+
+    def set_passed(self):
+        self.renderer.status = TestStatus.Passed
+        for child in self.children:
+            child.set_passed()
+
+    def set_failed(self):
+        self.renderer.status = TestStatus.Failed
+        if self.parent:
+            self.parent.set_failed()
+
+    @property
+    def tests(self) -> list[Test]:
+        """
+        Recursively find all Tests that are children of this TestDir.
+        """
+        tests: list[Test] = []
+        for child in self.children:
+            if isinstance(child, Test):
+                tests.append(child)
+            else:
+                tests.extend(child.tests)
+
+        return tests
 
     @property
     def fully_qualified_path_str(self) -> str:
@@ -263,6 +306,30 @@ class Test:
     def __post_init__(self):
         self.renderer = RenderConfig(self.name, owner=self)
         self.nav = Nav(self)
+
+    def run(self):
+        env = {"COLUMNS": "140"}
+
+        result = subprocess.run(
+            args=["pytest", self.test_arg],
+            capture_output=True,
+            env=env
+        )
+
+        if result.returncode == 0:
+            self.set_passed()
+
+        if result.returncode == 1:
+            self.set_failed()
+
+        return result
+
+    def set_passed(self):
+        self.renderer.status = TestStatus.Passed
+
+    def set_failed(self):
+        self.renderer.status = TestStatus.Failed
+        self.parent.set_failed()
 
     @property
     def test_arg(self) -> str:
