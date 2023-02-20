@@ -119,7 +119,7 @@ class Nav:
         return self.owner, result.stdout.decode("utf-8")
 
 
-class TestDir :
+class TestDir:
     """
     A TestDir represents a directory that contains tests, or has children that contain tests.
     """

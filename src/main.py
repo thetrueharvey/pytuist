@@ -17,6 +17,7 @@ import msvcrt
 
 console = Console()
 
+
 def main() -> None:
     input = get_tests()
 
@@ -63,6 +64,7 @@ def main() -> None:
                     pass
 
             live.update(render_test_tree(root, output), refresh=True)
+
 
 if __name__ == "__main__":
     main()
