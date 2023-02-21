@@ -144,7 +144,7 @@ class TestDir:
         if self.parent:
             self.parent.children.append(self)
 
-        self.renderer = RenderConfig(self.name, owner=self)
+        self.renderer = RenderConfig(self.name, test=self)
         self.nav = Nav(self)
 
     def with_child(self, name: str) -> TestDir:
@@ -304,7 +304,7 @@ class Test:
         self.__post_init__()
 
     def __post_init__(self):
-        self.renderer = RenderConfig(self.name, owner=self)
+        self.renderer = RenderConfig(self.name, test=self)
         self.nav = Nav(self)
 
     def run(self):
@@ -362,29 +362,29 @@ class RenderConfig:
     expanded: bool = True
     selected: bool = False
     status: TestStatus = TestStatus.NotRun
-    owner: TestDir | Test
+    test: TestDir | Test
 
-    def __init__(self, name: str, owner: TestDir | Test):
+    def __init__(self, name: str, test: TestDir | Test):
         self.name = name
-        self.owner = owner
+        self.test = test
 
     def get_checkbox_position(self) -> int:
         """
         Recursively get the position of the checkbox for this object, based on the position of all children
         checkboxes of the parent, where a child isn't hidden.
         """
-        self_position = self.owner.depth * 4 + len(self.name.replace(".py", ""))
-        if not self.expanded or isinstance(self.owner, Test):
+        self_position = self.test.depth * 4 + len(self.name.replace(".py", ""))
+        if not self.expanded or isinstance(self.test, Test):
             return self_position
 
-        return max(*[child.renderer.get_checkbox_position() for child in self.owner.children], self_position)
+        return max(*[child.renderer.get_checkbox_position() for child in self.test.children], self_position)
 
     def get_render(self, checkbox_position: int) -> str:
         """
         Describes to rich how to render this object.
         """
         name = self.name.replace(".py", "")
-        checkbox_spacing = checkbox_position - (self.owner.depth * 4 + len(name))
+        checkbox_spacing = checkbox_position - (self.test.depth * 4 + len(name))
 
         if self.selected:
             name = f"[bold blue]{name}[/]"
