@@ -9,10 +9,16 @@ import subprocess
 from pathlib import Path
 import re
 from enum import Enum
+from pathlib import Path
 
 # external
+from rich.syntax import Syntax
+from rich.text import Text
+from rich.console import Group
+from rich.panel import Panel
 
 # internal
+
 
 # %% Types
 from typing import Optional
@@ -28,6 +34,48 @@ class TestStatus(Enum):
             case TestStatus.Passed: return "[green][✓][/green]"
             case TestStatus.Failed: return "[red][✗][/red]"
             case TestStatus.NotRun: return "[grey][-][/grey]"
+
+
+# %% Error Class
+class TestError:
+    test: Test
+
+    expanded: bool = False
+
+    def __init__(
+        self,
+        test: Test,
+        error: str,
+    ):
+        self.test = test
+        self.error = error
+
+    def render(self, context_lines: int = 5) -> Group:
+        lines = self.error.splitlines()
+
+        title = lines[0].split(" ")[1]
+        file, line = lines[-1].split(":")[0:2]
+        error = lines[-1].split(": ")[-1]
+
+        syntax = Syntax.from_path(
+            self.test.parent.file.as_posix(),
+            line_numbers=True,
+            line_range=(int(line) - context_lines, int(line) + context_lines),
+            highlight_lines=set([int(line)]),
+        )
+
+        return Group(
+            Panel(
+                syntax,
+                title=file,
+                title_align="left",
+                padding=(1, 0, 0, 0)
+            ),
+            Text(error),
+        )
+
+        # TODO: Check if lines start with E and use those to get the error message
+
 
 
 # %% Folder Hierarchy
@@ -116,12 +164,12 @@ class Nav:
         """
         result = self.owner.run()
 
-        return self.owner, result.stdout.decode("utf-8")
+        return self.owner, result if isinstance(result, str) else result.stdout.decode("utf-8")
 
 
 class TestDir:
     """
-    A TestDir represents a directory that contains tests, or has children that contain tests.
+    A TestDir represents a directory that contains tests, a file that contains test, or with those criteria.
     """
     _dir_registry: dict[str, TestDir] = {}
 
@@ -181,13 +229,39 @@ class TestDir:
             self.set_passed()
             self.set_failed()
 
-            # parse the result
+            result_output = result.stdout.decode("utf-8")
+
+            # parse the failed tests
             tests = self.tests
-            failures: list[str] = re.findall(r"FAILED\s+(.*) - ", result.stdout.decode("utf-8"))
+            failures: list[str] = re.findall(r"FAILED\s+(.*) - ", result_output)
+
+            failure_details = result = "\n".join(
+                result_output
+                    .split("FAILURES")[1]
+                    .split("short test summary info")[0]
+                    .splitlines()[1:-1]
+            )
+
+            fail_indices = [
+                i
+                for i, line in enumerate(failure_details.splitlines())
+                if re.search(r"\.py:\d+: ", line) is not None
+            ]
+
+            failures_info = [
+                *map(
+                    lambda lines: "\n".join(lines),
+                    [failure_details.splitlines()[start + 1 : end + 1] for start, end in zip([-1] + fail_indices[:-1], fail_indices)]
+                )
+            ]
 
             for test in tests:
                 if test.test_arg in failures:
                     test.set_failed()
+                    test.error = TestError(
+                        test=test,
+                        error=failures_info.pop(0)
+                    )
 
         return result
 
@@ -221,6 +295,10 @@ class TestDir:
         The full path of the TestDir, including all parents.
         """
         return self.parent.fully_qualified_path_str + "/" + self.name if self.parent else self.name
+
+    @property
+    def file(self) -> Path:
+        return Path(self.fully_qualified_path_str)
 
     @property
     def test_arg(self) -> str:
@@ -296,6 +374,7 @@ class Test:
     parent: TestDir
 
     renderer: RenderConfig
+    error: Optional[TestError] = None
 
     def __init__(self, name: str, parent: TestDir) -> None:
         self.name = name
@@ -390,6 +469,17 @@ class RenderConfig:
             name = f"[bold blue]{name}[/]"
 
         return f"{name}{' ' * checkbox_spacing} {self.status.render()}"
+
+    def get_output(self) -> Text | Syntax:
+        if isinstance(self.test, TestDir):
+            if self.test.renderer.status.Failed:
+                return Text("Test Module Failed\nNavigate to a failed test to view the details of the failure", style="red")
+            else:
+                return Text("Test Module Passed", style="green")
+
+        if self.test.error:
+            return self.test.error.render()
+        return Text("Test Passed", style="green")
 
     def select(self) -> None:
         """

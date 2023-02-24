@@ -1,23 +1,71 @@
-============================= test session starts =============================
+=============================================================================================================================================================================== test session starts ================================================================================================================================================================================
 platform win32 -- Python 3.11.2, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
 rootdir: C:\Users\harvey\github\pytuist
 plugins: cov-3.0.0
-collected 7 items
+collected 10 items
 
-<Module test/test_root.py>
-  <Function test_in_root>
-<Module test/test_root_again.py>
-  <Function test_another_in_root>
-<Module test/child/test_child.py>
-  <Function test_child>
-  <Function test_another_in_child>
-<Module test/child/grandchild/test_another_grandchild.py>
-  <Function test_another_grandchild>
-  <Function test_that_fails>
-<Module test/child/grandchild/test_grandchild.py>
-  <Function test_grandchild>
-<Module test/unit/actual_test.py>
-  <Function test_construct_test_hierarchy>
-  <Function test_render>
+test\test_root.py .                                                                                                                                                                                                                                                                                                                                                           [ 10%] 
+test\test_root_again.py .F                                                                                                                                                                                                                                                                                                                                                    [ 30%]
+test\child\test_child.py ..                                                                                                                                                                                                                                                                                                                                                   [ 50%]
+test\child\grandchild\test_another_grandchild.py .F                                                                                                                                                                                                                                                                                                                           [ 70%] 
+test\child\grandchild\test_grandchild.py .                                                                                                                                                                                                                                                                                                                                    [ 80%] 
+test\unit\actual_test.py FF                                                                                                                                                                                                                                                                                                                                                   [100%]
 
-========================= 6 tests collected in 0.01s ==========================
+===================================================================================================================================================================================== FAILURES ===================================================================================================================================================================================== 
+_________________________________________________________________________________________________________________________________________________________________________________ test_that_fails __________________________________________________________________________________________________________________________________________________________________________________ 
+
+    def test_that_fails():
+>       assert False
+E       assert False
+
+test\test_root_again.py:6: AssertionError
+_________________________________________________________________________________________________________________________________________________________________________________ test_that_fails __________________________________________________________________________________________________________________________________________________________________________________ 
+
+    def test_that_fails():
+>       assert False
+E       assert False
+
+test\child\grandchild\test_another_grandchild.py:5: AssertionError
+__________________________________________________________________________________________________________________________________________________________________________ test_construct_test_hierarchy ___________________________________________________________________________________________________________________________________________________________________________ 
+
+    def test_construct_test_hierarchy():
+>       from src.pytuist import TestDir
+
+test\unit\actual_test.py:12:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+src\pytuist.py:17: in <module>
+    import src.error as error
+src\error.py:19: in <module>
+    class TestError:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+
+    class TestError:
+>       test: pytuist.Test
+E       AttributeError: partially initialized module 'src.pytuist' has no attribute 'Test' (most likely due to a circular import)
+
+src\error.py:20: AttributeError
+___________________________________________________________________________________________________________________________________________________________________________________ test_render ____________________________________________________________________________________________________________________________________________________________________________________ 
+
+    def test_render():
+>       from src.pytuist import TestDir
+
+test\unit\actual_test.py:22:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+src\pytuist.py:17: in <module>
+    import src.error as error
+src\error.py:19: in <module>
+    class TestError:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  
+
+    class TestError:
+>       test: pytuist.Test
+E       AttributeError: partially initialized module 'src.pytuist' has no attribute 'Test' (most likely due to a circular import)
+
+src\error.py:20: AttributeError
+============================================================================================================================================================================= short test summary info ============================================================================================================================================================================== 
+FAILED test/test_root_again.py::test_that_fails - assert False
+FAILED test/child/grandchild/test_another_grandchild.py::test_that_fails - assert False
+FAILED test/unit/actual_test.py::test_construct_test_hierarchy - AttributeError: partially initialized module 'src.pytuist' has no attribute 'Test' (most likely due to a circular import)
+FAILED test/unit/actual_test.py::test_render - AttributeError: partially initialized module 'src.pytuist' has no attribute 'Test' (most likely due to a circular import)
+=========================================================================================================================================================================== 4 failed, 6 passed in 0.14s ============================================================================================================================================================================ 
+NativeCommandExitException: Program "pytest.exe" ended with non-zero exit code: 1.
